@@ -453,6 +453,7 @@ body::after {
     padding: 0.72rem 1.65rem;
     background: var(--accent);
     color: #fff;
+    border: none;
     border-radius: 10px;
     font-family: var(--font-sans);
     font-size: 0.875rem;
@@ -567,6 +568,207 @@ body::after {
 
 .lang-toggle.lang-pulse {
     animation: lang-btn-pulse 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
+/* ============================================================
+   CV modal
+   ============================================================ */
+.cv-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.cv-modal[hidden] { display: none; }
+
+.cv-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 7, 18, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: modal-bg-in 0.28s var(--ease) forwards;
+}
+
+.cv-modal-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(860px, 100%);
+    height: min(92vh, 1100px);
+    background: rgba(8, 12, 28, 0.92);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55),
+                inset 0 0 0 1px rgba(99, 102, 241, 0.07);
+    overflow: hidden;
+    animation: modal-panel-in 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.cv-modal-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.cv-modal-title {
+    font-size: 0.75rem;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+}
+
+.cv-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.cv-modal-dl {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.36rem 0.9rem;
+    background: rgba(99, 102, 241, 0.14);
+    border: 1px solid rgba(99, 102, 241, 0.28);
+    border-radius: 8px;
+    color: rgba(165, 168, 255, 0.9);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    cursor: none;
+    -webkit-appearance: none;
+}
+
+.cv-modal-dl:hover {
+    background: rgba(99, 102, 241, 0.24);
+    border-color: rgba(99, 102, 241, 0.45);
+    color: #fff;
+}
+
+.cv-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: none;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.cv-modal-close:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--text);
+}
+
+.cv-modal-frame {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #fff;
+}
+
+@keyframes modal-bg-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modal-panel-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.cv-modal.closing .cv-modal-backdrop {
+    animation: modal-bg-out 0.22s var(--ease) forwards;
+}
+
+.cv-modal.closing .cv-modal-panel {
+    animation: modal-panel-out 0.22s var(--ease) forwards;
+}
+
+@keyframes modal-bg-out {
+    to { opacity: 0; }
+}
+
+@keyframes modal-panel-out {
+    to { opacity: 0; transform: translateY(12px) scale(0.97); }
+}
+
+@media (max-width: 640px) {
+    .cv-modal { padding: 0; align-items: flex-end; }
+    .cv-modal-panel { width: 100%; height: 92dvh; border-radius: 18px 18px 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cv-modal-backdrop, .cv-modal-panel { animation: none !important; }
+}
+
+
+/* ============================================================
+   Toast notification
+   ============================================================ */
+.toast {
+    position: fixed;
+    bottom: 3.5rem;
+    left: clamp(1.5rem, 5vw, 3rem);
+    z-index: 101;
+    padding: 0.7rem 1.1rem;
+    background: rgba(5, 8, 22, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 0 0 1px rgba(99, 102, 241, 0.08);
+    font-size: 0.78rem;
+    font-family: var(--font-sans);
+    color: rgba(241, 245, 249, 0.85);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    user-select: none;
+    display: none;
+}
+
+.toast.toast-visible {
+    display: block;
+    animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast.toast-hiding {
+    animation: toast-out 0.28s var(--ease) forwards;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0)   scale(1);    }
+    to   { opacity: 0; transform: translateY(5px) scale(0.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast { animation: none !important; }
 }
 
 

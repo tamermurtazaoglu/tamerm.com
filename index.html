@@ -93,7 +93,7 @@
                 </a>
             </nav>
 
-            <a href="cv.pdf" download="TamerMurtazaoglu_CV.pdf" class="cv-btn" id="cv-btn">
+            <button type="button" class="cv-btn" id="cv-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                      stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true">
                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -101,10 +101,42 @@
                     <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
                 <span data-i18n="cvBtn">Download CV</span>
-            </a>
+            </button>
 
         </div>
     </main>
+
+    <!-- CV preview modal -->
+    <div class="cv-modal" id="cv-modal" role="dialog" aria-modal="true" aria-labelledby="cv-modal-title" hidden>
+        <div class="cv-modal-backdrop" id="cv-modal-backdrop"></div>
+        <div class="cv-modal-panel">
+            <div class="cv-modal-bar">
+                <span class="cv-modal-title" id="cv-modal-title">Tamer Murtazaoğlu — CV</span>
+                <div class="cv-modal-actions">
+                    <button type="button" class="cv-modal-dl" id="cv-modal-dl">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        <span data-i18n="cvBtn">Download CV</span>
+                    </button>
+                    <button type="button" class="cv-modal-close" id="cv-modal-close" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" width="16" height="16" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <iframe class="cv-modal-frame" id="cv-modal-frame" title="CV Preview"></iframe>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <footer class="footer">
         <span>© 2026 Tamer Murtazaoğlu</span>

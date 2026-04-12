@@ -36,6 +36,7 @@ const T = {
             ahead:  (h, t) => `Your time <strong>${t}</strong><br><span class="ctx-diff">+${h}h ahead</span>`,
             behind: (h, t) => `Your time <strong>${t}</strong><br><span class="ctx-diff">${h}h behind</span>`,
         },
+        toast: 'Thanks! Hope it stands out. 📄',
     },
     tr: {
         status:  'Fırsatlara açık',
@@ -56,6 +57,7 @@ const T = {
             ahead:  (h, t) => `Senin saatin <strong>${t}</strong><br><span class="ctx-diff">+${h}h ileride</span>`,
             behind: (h, t) => `Senin saatin <strong>${t}</strong><br><span class="ctx-diff">${h}h geride</span>`,
         },
+        toast: 'Teşekkürler! Umarım fark yaratır. 📄',
     },
 };
 
@@ -662,7 +664,97 @@ function setLang(lang, animate = true) {
 
 
 /* ============================================================
-   11. Language toggle (i18n)
+   11. CV modal + toast
+   ============================================================ */
+(function initCvModal() {
+    const openBtn   = document.getElementById('cv-btn');
+    const modal     = document.getElementById('cv-modal');
+    const backdrop  = document.getElementById('cv-modal-backdrop');
+    const closeBtn  = document.getElementById('cv-modal-close');
+    const frame     = document.getElementById('cv-modal-frame');
+    const dlBtn     = document.getElementById('cv-modal-dl');
+    const toast     = document.getElementById('toast');
+    if (!openBtn || !modal) return;
+
+    let toastTimer  = null;
+    let frameLoaded = false;
+
+    function showToast() {
+        if (!toast) return;
+        toast.textContent = T[currentLang].toast;
+        toast.classList.remove('toast-visible', 'toast-hiding');
+        void toast.offsetWidth;
+        toast.classList.add('toast-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toast.classList.add('toast-hiding');
+            toast.addEventListener('animationend', () => {
+                toast.classList.remove('toast-visible', 'toast-hiding');
+            }, { once: true });
+        }, 3800);
+    }
+
+    function openModal() {
+        modal.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
+        if (!frameLoaded) {
+            frame.src = 'cv.pdf';
+            frameLoaded = true;
+        }
+        /* Trap focus inside modal on next frame */
+        requestAnimationFrame(() => closeBtn.focus());
+    }
+
+    function closeModal() {
+        /* Skip animation for reduced-motion — animationend would never fire */
+        if (REDUCED_MOT) {
+            modal.setAttribute('hidden', '');
+            document.body.style.overflow = '';
+            return;
+        }
+        modal.classList.add('closing');
+        modal.addEventListener('animationend', () => {
+            modal.classList.remove('closing');
+            modal.setAttribute('hidden', '');
+            document.body.style.overflow = '';
+        }, { once: true });
+    }
+
+    function downloadCV() {
+        fetch('cv.pdf')
+            .then(r => r.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a   = document.createElement('a');
+                a.href     = url;
+                a.download = 'TamerMurtazaoglu_CV.pdf';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            })
+            .catch(() => {
+                /* Fallback: let the browser handle it natively */
+                const a = document.createElement('a');
+                a.href     = 'cv.pdf';
+                a.download = 'TamerMurtazaoglu_CV.pdf';
+                a.click();
+            });
+        showToast();
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+    dlBtn.addEventListener('click', downloadCV);
+
+    /* ESC to close */
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !modal.hasAttribute('hidden')) closeModal();
+    });
+}());
+
+
+/* ============================================================
+   12. Language toggle (i18n)
    ─────────────────────────────────────────────────────────────
    Priority: localStorage → browser language → 'en'
    Every setLang() call updates data-i18n elements, typewriter
