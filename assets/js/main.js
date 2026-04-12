@@ -551,21 +551,113 @@ function setLang(lang, animate = true) {
 
 
 /* ============================================================
-   10. Random glitch on name
+   10. Visitor context card
+   ─────────────────────────────────────────────────────────────
+   Bottom-right floating card: Istanbul time (live), weather
+   (Open-Meteo, no API key required), visitor's local time
+   and UTC offset difference from Istanbul.
    ============================================================ */
-(function initGlitch() {
-    if (REDUCED_MOT) return;
-    const name = document.querySelector('.name');
-    if (!name) return;
+(function initContextCard() {
+    const card      = document.getElementById('ctx-card');
+    const elTime    = document.getElementById('ctx-ist-time');
+    const elStatus  = document.getElementById('ctx-status');
+    const elWeather = document.getElementById('ctx-weather');
+    const elVisitor = document.getElementById('ctx-visitor');
+    if (!card) return;
 
-    function glitch() {
-        setTimeout(() => {
-            name.classList.add('glitching');
-            setTimeout(() => name.classList.remove('glitching'), 420);
-            glitch();
-        }, 5000 + Math.random() * 6000);
+    const IST = 'Europe/Istanbul';
+
+    /* --- WMO weather code → emoji --- */
+    function wmo(code) {
+        if (code === 0)             return '☀️';
+        if (code <= 3)              return '⛅';
+        if (code <= 48)             return '🌫️';
+        if (code <= 57)             return '🌦️';
+        if (code <= 67)             return '🌧️';
+        if (code <= 77)             return '❄️';
+        if (code <= 82)             return '🌧️';
+        return '⛈️';
     }
-    setTimeout(glitch, 3500);
+
+    /* --- Get UTC offset in hours (DST-aware) --- */
+    function utcOffset(tz) {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: tz, timeZoneName: 'shortOffset',
+        }).formatToParts(new Date());
+        const tzName = (parts.find(p => p.type === 'timeZoneName') || {}).value || '';
+        const m = tzName.match(/GMT([+-])(\d+)(?::(\d+))?/);
+        if (!m) return 0;
+        return (m[1] === '+' ? 1 : -1) * (parseInt(m[2]) + (parseInt(m[3] || 0) / 60));
+    }
+
+    /* --- Status text based on day and hour (language-agnostic, pulls from T) --- */
+    function statusText(hour, isWeekend) {
+        const c = T[currentLang].ctx;
+        if (hour < 6)  return c.night;
+        if (hour < 9)  return c.early;
+        if (hour < 12) return isWeekend ? c.mornWknd : c.mornWork;
+        if (hour < 14) return c.lunch;
+        if (hour < 18) return isWeekend ? c.aftnWknd : c.aftnWork;
+        if (hour < 21) return c.evening;
+        return c.lateNight;
+    }
+
+    /* --- Fetch weather data (Open-Meteo, free, no key) --- */
+    fetch('https://api.open-meteo.com/v1/forecast' +
+          '?latitude=41.0082&longitude=28.9784' +
+          '&current=temperature_2m,weather_code&timezone=Europe%2FIstanbul')
+        .then(r => r.json())
+        .then(d => {
+            const t    = Math.round(d.current.temperature_2m);
+            const icon = wmo(d.current.weather_code);
+            elWeather.textContent = `${icon} ${t}°`;
+        })
+        .catch(() => { /* fail silently */ });
+
+    /* --- Live clock (updates every second) --- */
+    function tick() {
+        const now = new Date();
+
+        /* Istanbul time */
+        const istTime = now.toLocaleTimeString('tr-TR', {
+            hour: '2-digit', minute: '2-digit', timeZone: IST,
+        });
+        elTime.textContent = istTime;
+
+        /* Istanbul day of week + hour */
+        const istHour = parseInt(
+            new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric', hour12: false, timeZone: IST,
+            }).format(now)
+        );
+        const istDay = new Intl.DateTimeFormat('en-US', {
+            weekday: 'long', timeZone: IST,
+        }).format(now);
+        const isWeekend = istDay === 'Saturday' || istDay === 'Sunday';
+        elStatus.textContent = statusText(istHour, isWeekend);
+
+        /* Visitor local time + offset diff */
+        const visitorTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const locTime   = now.toLocaleTimeString('tr-TR', {
+            hour: '2-digit', minute: '2-digit',
+        });
+        const diff = utcOffset(IST) - utcOffset(visitorTZ);
+
+        const c = T[currentLang].ctx;
+        if (diff === 0) {
+            elVisitor.innerHTML = c.sameZone;
+        } else if (diff > 0) {
+            elVisitor.innerHTML = c.ahead(diff, locTime);
+        } else {
+            elVisitor.innerHTML = c.behind(Math.abs(diff), locTime);
+        }
+    }
+
+    tick();
+    setInterval(tick, 1000);
+
+    /* Show after entrance animations finish */
+    setTimeout(() => card.classList.add('visible'), 2800);
 }());
 
 
@@ -587,4 +679,23 @@ function setLang(lang, animate = true) {
     btn.addEventListener('click', () => {
         setLang(currentLang === 'en' ? 'tr' : 'en');
     });
+}());
+
+
+/* ============================================================
+   12. Random glitch on name
+   ============================================================ */
+(function initGlitch() {
+    if (REDUCED_MOT) return;
+    const name = document.querySelector('.name');
+    if (!name) return;
+
+    function glitch() {
+        setTimeout(() => {
+            name.classList.add('glitching');
+            setTimeout(() => name.classList.remove('glitching'), 420);
+            glitch();
+        }, 5000 + Math.random() * 6000);
+    }
+    setTimeout(glitch, 3500);
 }());
