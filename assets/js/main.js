@@ -36,7 +36,8 @@ const T = {
             ahead:  (h, t) => `Your time <strong>${t}</strong><br><span class="ctx-diff">+${h}h ahead</span>`,
             behind: (h, t) => `Your time <strong>${t}</strong><br><span class="ctx-diff">${h}h behind</span>`,
         },
-        toast: 'Thanks! Hope it stands out. 📄',
+        toast:        'Thanks! Hope it stands out. 📄',
+        termTrigger:  'open terminal',
     },
     tr: {
         status:  'Fırsatlara açık',
@@ -57,7 +58,8 @@ const T = {
             ahead:  (h, t) => `Senin saatin <strong>${t}</strong><br><span class="ctx-diff">+${h}h ileride</span>`,
             behind: (h, t) => `Senin saatin <strong>${t}</strong><br><span class="ctx-diff">${h}h geride</span>`,
         },
-        toast: 'Teşekkürler! Umarım fark yaratır. 📄',
+        toast:        'Teşekkürler! Umarım fark yaratır. 📄',
+        termTrigger:  'terminali aç',
     },
 };
 
@@ -794,7 +796,460 @@ function setLang(lang, animate = true) {
 
 
 /* ============================================================
-   13. Console easter egg
+   13. Secret Terminal
+   ─────────────────────────────────────────────────────────────
+   Press / or ` anywhere to open. Commands: whoami · skills ·
+   projects · contact · sudo hire-me · help · clear · exit
+   ============================================================ */
+(function initTerminal() {
+    const modal     = document.getElementById('term-modal');
+    const backdrop  = document.getElementById('term-backdrop');
+    const termBody  = document.getElementById('term-body');
+    const termInput = document.getElementById('term-input');
+    const closeBtn  = document.getElementById('term-close');
+    if (!modal || !termBody || !termInput) return;
+
+    let cmdHistory = [];
+    let histCursor = -1;
+    let busy       = false;
+    let firstOpen  = true;
+
+    /* ── Per-language content ── */
+    const TT = {
+        en: {
+            welcome: [
+                { cls: 'term-out term-dim', parts: [
+                    { text: 'tamerm.com — interactive shell  (type ' },
+                    { text: 'help', cls: 'term-welcome-cmd' },
+                    { text: ' to get started)' },
+                ]},
+                { text: '', cls: '' },
+            ],
+            help: [
+                { text: 'Commands:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { text: '  whoami        short bio', cls: 'term-out' },
+                { text: '  skills        tech stack', cls: 'term-out' },
+                { text: '  projects      things I\'ve built', cls: 'term-out' },
+                { text: '  contact       links & reach me', cls: 'term-out' },
+                { text: '  sudo hire-me  🎉', cls: 'term-out' },
+                { text: '  clear         clear screen', cls: 'term-out' },
+                { text: '  exit          close terminal', cls: 'term-out' },
+                { text: '', cls: '' },
+            ],
+            whoami: [
+                { text: 'Tamer Murtazaoğlu', cls: 'term-key' },
+                { text: 'Software Engineer', cls: 'term-out' },
+                { text: 'Java & Spring Boot · Microservices · CI/CD · AI-powered development', cls: 'term-out' },
+                { text: 'Currently @ Inomera — Istanbul, Türkiye.', cls: 'term-out' },
+                { text: 'Open to new opportunities.', cls: 'term-success' },
+                { text: '', cls: '' },
+            ],
+            skills: [
+                { text: 'Skills & Technologies:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { text: '  Backend     Java · Spring Boot · JPA · Hibernate · JWT · Spring Security', cls: 'term-out', delay: 80 },
+                { text: '  Databases   MongoDB · MySQL · MariaDB · PostgreSQL · Oracle · H2 · Flyway', cls: 'term-out', delay: 80 },
+                { text: '  DevOps      Docker · Kubernetes · Kafka · RabbitMQ · ElasticSearch',        cls: 'term-out', delay: 80 },
+                { text: '  Testing     JUnit · TestContainers · SonarQube · Jenkins · GitLab · Gitea', cls: 'term-out', delay: 80 },
+                { text: '  Frontend    Angular.js · HTML · CSS · React Native',                        cls: 'term-out', delay: 80 },
+                { text: '  Practices   OOP · SOLID · Design Patterns · Clean Code · Agile',            cls: 'term-out', delay: 80 },
+                { text: '', cls: '' },
+                { text: '  ⚡ AI-powered development — Cursor · GitHub Copilot · Claude', cls: 'term-ai', delay: 120 },
+                { text: '', cls: '' },
+            ],
+            projects: [
+                { text: 'Work Experience:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { cls: 'term-out', parts: [
+                    { text: '  Inomera      ' },
+                    { text: 'Mobile payment platform — Java, Spring Boot, Kafka, K8s  (2025 →)', href: 'https://www.inomera.com' },
+                ]},
+                { cls: 'term-out', parts: [
+                    { text: '  Scalefocus   ' },
+                    { text: '1K+ user platform — Java, Spring, Docker, CI/CD  (2024)', href: 'https://scalefocus.com' },
+                ]},
+                { cls: 'term-out', parts: [
+                    { text: '  tamerm.com   ' },
+                    { text: 'Personal portfolio — vanilla JS, no frameworks', href: 'https://tamerm.com' },
+                ]},
+                { text: '', cls: '' },
+                { cls: 'term-dim', parts: [
+                    { text: '  More on GitHub → ', href: 'https://github.com/tamermurtazaoglu' },
+                ]},
+                { text: '', cls: '' },
+            ],
+            contact: [
+                { text: 'Get in touch:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { cls: 'term-out', parts: [{ text: '  Email      ' }, { text: 'tamermurtazaoglu@gmail.com',       href: 'mailto:tamermurtazaoglu@gmail.com' }] },
+                { cls: 'term-out', parts: [{ text: '  LinkedIn   ' }, { text: 'linkedin.com/in/tamermurtazaoglu', href: 'https://www.linkedin.com/in/tamermurtazaoglu' }] },
+                { cls: 'term-out', parts: [{ text: '  GitHub     ' }, { text: 'github.com/tamermurtazaoglu',      href: 'https://github.com/tamermurtazaoglu' }] },
+                { cls: 'term-out', parts: [{ text: '  Instagram  ' }, { text: 'instagram.com/mr.tamerm',          href: 'https://www.instagram.com/mr.tamerm' }] },
+                { text: '', cls: '' },
+            ],
+            hireMe: [
+                { text: '⠿  Authenticating...',             cls: 'term-out', delay: 200 },
+                { text: '⠿  Preparing hire request...',     cls: 'term-out', delay: 820 },
+                { text: '✓  Request sent! You\'ll hear back soon. 🎉', cls: 'term-success', delay: 680 },
+                { text: '', cls: '' },
+            ],
+            hireMeNoSudo: [
+                { text: 'Permission denied.', cls: 'term-error' },
+                { text: 'Hint: sudo hire-me', cls: 'term-dim' },
+                { text: '', cls: '' },
+            ],
+            notFound: cmd => [
+                { text: `${cmd}: command not found`, cls: 'term-error' },
+                { text: 'Type \'help\' for available commands.', cls: 'term-dim' },
+                { text: '', cls: '' },
+            ],
+        },
+        tr: {
+            welcome: [
+                { cls: 'term-out term-dim', parts: [
+                    { text: 'tamerm.com — interaktif shell  (başlamak için ' },
+                    { text: 'help', cls: 'term-welcome-cmd' },
+                    { text: ' yazın)' },
+                ]},
+                { text: '', cls: '' },
+            ],
+            help: [
+                { text: 'Komutlar:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { text: '  whoami        kısa biyografi', cls: 'term-out' },
+                { text: '  skills        teknoloji yığını', cls: 'term-out' },
+                { text: '  projects      projelerim', cls: 'term-out' },
+                { text: '  contact       iletişim', cls: 'term-out' },
+                { text: '  sudo hire-me  🎉', cls: 'term-out' },
+                { text: '  clear         ekranı temizle', cls: 'term-out' },
+                { text: '  exit          terminali kapat', cls: 'term-out' },
+                { text: '', cls: '' },
+            ],
+            whoami: [
+                { text: 'Tamer Murtazaoğlu', cls: 'term-key' },
+                { text: 'Yazılım Mühendisi', cls: 'term-out' },
+                { text: 'Java & Spring Boot · Mikroservisler · CI/CD · AI destekli geliştirme', cls: 'term-out' },
+                { text: 'Şu an Inomera\'da — İstanbul, Türkiye.', cls: 'term-out' },
+                { text: 'Yeni fırsatlara açık.', cls: 'term-success' },
+                { text: '', cls: '' },
+            ],
+            skills: [
+                { text: 'Beceriler & Teknolojiler:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { text: '  Backend      Java · Spring Boot · JPA · Hibernate · JWT · Spring Security', cls: 'term-out', delay: 80 },
+                { text: '  Veritabanı   MongoDB · MySQL · MariaDB · PostgreSQL · Oracle · H2 · Flyway', cls: 'term-out', delay: 80 },
+                { text: '  DevOps       Docker · Kubernetes · Kafka · RabbitMQ · ElasticSearch',        cls: 'term-out', delay: 80 },
+                { text: '  Test         JUnit · TestContainers · SonarQube · Jenkins · GitLab · Gitea', cls: 'term-out', delay: 80 },
+                { text: '  Frontend     Angular.js · HTML · CSS · React Native',                        cls: 'term-out', delay: 80 },
+                { text: '  Pratikler    OOP · SOLID · Design Patterns · Clean Code · Agile',            cls: 'term-out', delay: 80 },
+                { text: '', cls: '' },
+                { text: '  ⚡ AI destekli geliştirme — Cursor · GitHub Copilot · Claude', cls: 'term-ai', delay: 120 },
+                { text: '', cls: '' },
+            ],
+            projects: [
+                { text: 'İş Deneyimi:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { cls: 'term-out', parts: [
+                    { text: '  Inomera      ' },
+                    { text: 'Mobil ödeme platformu — Java, Spring Boot, Kafka, K8s  (2025 →)', href: 'https://www.inomera.com' },
+                ]},
+                { cls: 'term-out', parts: [
+                    { text: '  Scalefocus   ' },
+                    { text: '1B+ kullanıcı platformu — Java, Spring, Docker, CI/CD  (2024)', href: 'https://scalefocus.com' },
+                ]},
+                { cls: 'term-out', parts: [
+                    { text: '  tamerm.com   ' },
+                    { text: 'Kişisel portföy — vanilla JS, framework yok', href: 'https://tamerm.com' },
+                ]},
+                { text: '', cls: '' },
+                { cls: 'term-dim', parts: [
+                    { text: '  GitHub\'da daha fazlası → ', href: 'https://github.com/tamermurtazaoglu' },
+                ]},
+                { text: '', cls: '' },
+            ],
+            contact: [
+                { text: 'İletişim:', cls: 'term-key' },
+                { text: '', cls: '' },
+                { cls: 'term-out', parts: [{ text: '  E-posta     ' }, { text: 'tamermurtazaoglu@gmail.com',       href: 'mailto:tamermurtazaoglu@gmail.com' }] },
+                { cls: 'term-out', parts: [{ text: '  LinkedIn    ' }, { text: 'linkedin.com/in/tamermurtazaoglu', href: 'https://www.linkedin.com/in/tamermurtazaoglu' }] },
+                { cls: 'term-out', parts: [{ text: '  GitHub      ' }, { text: 'github.com/tamermurtazaoglu',      href: 'https://github.com/tamermurtazaoglu' }] },
+                { cls: 'term-out', parts: [{ text: '  Instagram   ' }, { text: 'instagram.com/mr.tamerm',          href: 'https://www.instagram.com/mr.tamerm' }] },
+                { text: '', cls: '' },
+            ],
+            hireMe: [
+                { text: '⠿  Kimlik doğrulanıyor...',                      cls: 'term-out', delay: 200 },
+                { text: '⠿  İşe alım talebi hazırlanıyor...',             cls: 'term-out', delay: 820 },
+                { text: '✓  Talep gönderildi! Yakında dönüş yapılacak. 🎉', cls: 'term-success', delay: 680 },
+                { text: '', cls: '' },
+            ],
+            hireMeNoSudo: [
+                { text: 'İzin reddedildi.', cls: 'term-error' },
+                { text: 'İpucu: sudo hire-me', cls: 'term-dim' },
+                { text: '', cls: '' },
+            ],
+            notFound: cmd => [
+                { text: `${cmd}: komut bulunamadı`, cls: 'term-error' },
+                { text: '\'help\' yazarak mevcut komutları görebilirsin.', cls: 'term-dim' },
+                { text: '', cls: '' },
+            ],
+        },
+    };
+
+    function tt() { return TT[currentLang] || TT.en; }
+
+    function scrollBottom() {
+        termBody.scrollTop = termBody.scrollHeight;
+    }
+
+    function addLine(line) {
+        const div = document.createElement('div');
+        div.className = 'term-line ' + (line.cls || '');
+        if (line.parts) {
+            for (const part of line.parts) {
+                if (part.href) {
+                    const a = document.createElement('a');
+                    a.href = part.href;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.className = 'term-link';
+                    a.textContent = part.text;
+                    div.appendChild(a);
+                } else if (part.cls) {
+                    const span = document.createElement('span');
+                    span.className = part.cls;
+                    span.textContent = part.text;
+                    div.appendChild(span);
+                } else {
+                    div.appendChild(document.createTextNode(part.text));
+                }
+            }
+        } else {
+            div.textContent = line.text || '';
+        }
+        termBody.appendChild(div);
+        scrollBottom();
+        return div;
+    }
+
+    function addCmdEcho(cmd) {
+        const div = document.createElement('div');
+        div.className = 'term-line term-cmd';
+        div.textContent = cmd;   // textContent — safe from XSS
+        termBody.appendChild(div);
+        scrollBottom();
+    }
+
+    function printLines(lines, onDone) {
+        busy = true;
+        let i = 0;
+        function next() {
+            if (i >= lines.length) { busy = false; if (onDone) onDone(); return; }
+            const line  = lines[i++];
+            const delay = line.delay || 0;
+            setTimeout(() => { addLine(line); next(); }, delay);
+        }
+        next();
+    }
+
+    /* ── Canvas confetti burst ── */
+    function launchConfetti() {
+        if (REDUCED_MOT) return;
+        const c = document.createElement('canvas');
+        c.style.cssText = 'position:fixed;inset:0;z-index:9996;pointer-events:none;';
+        c.width  = window.innerWidth;
+        c.height = window.innerHeight;
+        document.body.appendChild(c);
+
+        const ctx2 = c.getContext('2d');
+        const COLS = ['#6366f1','#a78bfa','#f59e0b','#34d399','#f472b6','#60a5fa','#e2e8f0'];
+
+        const parts = Array.from({ length: 120 }, () => ({
+            x:     c.width  * 0.5 + (Math.random() - 0.5) * 360,
+            y:     c.height * 0.44,
+            vx:    (Math.random() - 0.5) * 20,
+            vy:    Math.random() * -24 - 4,
+            w:     5 + Math.random() * 9,
+            h:     3 + Math.random() * 5,
+            color: COLS[Math.floor(Math.random() * COLS.length)],
+            rot:   Math.random() * Math.PI * 2,
+            rv:    (Math.random() - 0.5) * 0.30,
+            g:     0.45 + Math.random() * 0.35,
+            life:  1,
+            decay: 0.007 + Math.random() * 0.007,
+        }));
+
+        (function animate() {
+            ctx2.clearRect(0, 0, c.width, c.height);
+            let any = false;
+            for (const p of parts) {
+                p.vy += p.g; p.x += p.vx; p.y += p.vy;
+                p.rot += p.rv; p.life -= p.decay;
+                if (p.life <= 0 || p.y > c.height + 20) continue;
+                any = true;
+                ctx2.save();
+                ctx2.translate(p.x, p.y); ctx2.rotate(p.rot);
+                ctx2.globalAlpha = Math.max(0, p.life);
+                ctx2.fillStyle = p.color;
+                ctx2.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx2.restore();
+            }
+            if (any) requestAnimationFrame(animate); else c.remove();
+        }());
+    }
+
+    /* ── Command execution ── */
+    function run(raw) {
+        const cmd = raw.trim().replace(/\s+/g, ' ').toLowerCase();
+        if (!cmd) return;
+
+        /* Meta-commands always run regardless of busy */
+        if (cmd === 'clear') { termBody.innerHTML = ''; busy = false; return; }
+        if (cmd === 'exit')  { closeTerm(); return; }
+
+        if (busy) return;
+
+        cmdHistory.unshift(raw);
+        histCursor = -1;
+        addCmdEcho(raw);
+
+        const tl = tt();
+
+        if (cmd === 'help')         { printLines(tl.help);         return; }
+        if (cmd === 'whoami')       { printLines(tl.whoami);       return; }
+        if (cmd === 'skills')       { printLines(tl.skills);       return; }
+        if (cmd === 'projects')     { printLines(tl.projects);     return; }
+        if (cmd === 'contact')      { printLines(tl.contact);      return; }
+        if (cmd === 'hire-me')      { printLines(tl.hireMeNoSudo); return; }
+        if (cmd === 'sudo hire-me') { printLines(tl.hireMe, launchConfetti); return; }
+
+        printLines(tl.notFound(raw.trim()));
+    }
+
+    /* ── Open / Close ── */
+    function openTerm() {
+        if (!modal.hasAttribute('hidden')) return;
+        modal.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
+        if (firstOpen) {
+            firstOpen = false;
+            printLines(tt().welcome, () => requestAnimationFrame(() => termInput.focus()));
+        } else {
+            requestAnimationFrame(() => termInput.focus());
+        }
+    }
+
+    function closeTerm() {
+        if (modal.hasAttribute('hidden')) return;
+        if (REDUCED_MOT) {
+            modal.setAttribute('hidden', '');
+            document.body.style.overflow = '';
+            return;
+        }
+        modal.classList.add('closing');
+        modal.addEventListener('animationend', () => {
+            modal.classList.remove('closing');
+            modal.setAttribute('hidden', '');
+            document.body.style.overflow = '';
+        }, { once: true });
+    }
+
+    /* Expose for console access on any device */
+    window.openTerminal = openTerm;
+
+    /* ── Global keydown: open on / or ` ── */
+    document.addEventListener('keydown', e => {
+        if (!modal.hasAttribute('hidden')) {
+            if (e.key === 'Escape') { e.preventDefault(); closeTerm(); }
+            return;
+        }
+        const cvModal = document.getElementById('cv-modal');
+        if (cvModal && !cvModal.hasAttribute('hidden')) return;
+        const tg = e.target;
+        if (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' || tg.isContentEditable) return;
+        if (e.key === '/' || e.key === '`') { e.preventDefault(); openTerm(); }
+    });
+
+    /* ── Terminal input events ── */
+    termInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const val = termInput.value;
+            termInput.value = '';
+            run(val);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (histCursor < cmdHistory.length - 1) {
+                histCursor++;
+                termInput.value = cmdHistory[histCursor];
+                requestAnimationFrame(() => termInput.setSelectionRange(termInput.value.length, termInput.value.length));
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (histCursor > 0) { histCursor--; termInput.value = cmdHistory[histCursor]; }
+            else { histCursor = -1; termInput.value = ''; }
+        } else if (e.key === 'l' && e.ctrlKey) {
+            e.preventDefault();
+            termBody.innerHTML = '';
+        }
+    });
+
+    closeBtn.addEventListener('click', closeTerm);
+    backdrop.addEventListener('click', closeTerm);
+
+    /* ── Footer >_ button ── */
+    const triggerBtn = document.getElementById('term-trigger');
+    if (triggerBtn) triggerBtn.addEventListener('click', openTerm);
+
+    /* ── ~/$ terminal line on hero (click or Enter/Space) ── */
+    const termLine = document.getElementById('terminal-line');
+    if (termLine) {
+        termLine.addEventListener('click', openTerm);
+        termLine.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTerm(); }
+        });
+        /* Activate custom cursor ring on hover */
+        if (IS_POINTER) {
+            const dot  = document.getElementById('cursor-dot');
+            const ring = document.getElementById('cursor-ring');
+            const aura = document.getElementById('cursor-aura');
+            termLine.addEventListener('mouseenter', () => {
+                dot  && dot.classList.add('active');
+                ring && ring.classList.add('active');
+                aura && aura.classList.add('active');
+            });
+            termLine.addEventListener('mouseleave', () => {
+                dot  && dot.classList.remove('active');
+                ring && ring.classList.remove('active');
+                aura && aura.classList.remove('active');
+            });
+        }
+    }
+
+    /* ── Custom cursor hover for dynamically created links ── */
+    if (IS_POINTER) {
+        const dot  = document.getElementById('cursor-dot');
+        const ring = document.getElementById('cursor-ring');
+        const aura = document.getElementById('cursor-aura');
+        termBody.addEventListener('mouseover', e => {
+            if (e.target.closest('a')) {
+                dot  && dot.classList.add('active');
+                ring && ring.classList.add('active');
+                aura && aura.classList.add('active');
+            }
+        });
+        termBody.addEventListener('mouseout', e => {
+            if (e.target.closest('a')) {
+                dot  && dot.classList.remove('active');
+                ring && ring.classList.remove('active');
+                aura && aura.classList.remove('active');
+            }
+        });
+    }
+}());
+
+
+/* ============================================================
+   14. Console easter egg
    ============================================================ */
 (function initConsoleEasterEgg() {
     const ascii = [
@@ -821,5 +1276,13 @@ function setLang(lang, animate = true) {
     console.log(
         '%c⭐ github.com/tamermurtazaoglu/tamerm.com',
         'color:#a78bfa; font-family: monospace; font-size: 12px;'
+    );
+    console.log(
+        '%c📟 Press / or ` anywhere to open the secret terminal',
+        'color:#6366f1; font-family: monospace; font-size: 12px; font-weight: 600;'
+    );
+    console.log(
+        '%cor run: window.openTerminal()',
+        'color:#64748b; font-family: monospace; font-size: 11px;'
     );
 }());

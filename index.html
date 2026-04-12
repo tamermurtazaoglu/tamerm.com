@@ -66,7 +66,8 @@
                 <span data-i18n="tagline">Crafting things for the web &amp; beyond.</span>
             </p>
 
-            <p class="terminal-line" data-depth="1.1">
+            <p class="terminal-line" id="terminal-line" data-depth="1.1"
+               role="button" tabindex="0" aria-label="Open terminal">
                 <span class="prompt" aria-hidden="true">~/$ </span>
                 <span class="role-text" id="role-text" aria-live="polite"></span>
                 <span class="blink" aria-hidden="true">_</span>
@@ -135,18 +136,50 @@
         </div>
     </div>
 
+    <!-- Secret Terminal -->
+    <div class="term-modal" id="term-modal" role="dialog" aria-modal="true" aria-label="Terminal" hidden>
+        <div class="term-backdrop" id="term-backdrop"></div>
+        <div class="term-panel">
+            <div class="term-bar">
+                <div class="term-dots" aria-hidden="true">
+                    <span class="term-dot term-dot-r"></span>
+                    <span class="term-dot term-dot-y"></span>
+                    <span class="term-dot term-dot-g"></span>
+                </div>
+                <span class="term-title-bar">tamer@tamerm.com — bash</span>
+                <button type="button" class="term-close" id="term-close" aria-label="Close terminal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" width="14" height="14" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="term-body" id="term-body" aria-live="polite" aria-atomic="false"></div>
+            <div class="term-input-row">
+                <span class="term-prompt-sym" aria-hidden="true">~/$ </span>
+                <input type="text" class="term-input" id="term-input"
+                       autocomplete="off" autocorrect="off" autocapitalize="off"
+                       spellcheck="false" aria-label="Terminal command input">
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <footer class="footer">
-        <span>© 2026 Tamer Murtazaoğlu</span>
-        <span class="sep" aria-hidden="true">·</span>
-        <span>tamerm.com</span>
+        <span>© 2026 tamerm.com</span>
         <span class="sep" aria-hidden="true">·</span>
         <button class="lang-toggle" id="lang-toggle" aria-label="Switch language / Dil değiştir">
             <span id="lang-current">EN</span>
             <span class="lang-sep" aria-hidden="true">/</span>
             <span id="lang-other">TR</span>
+        </button>
+        <span class="sep" aria-hidden="true">·</span>
+        <button type="button" class="term-trigger" id="term-trigger" aria-label="Open terminal">
+            <span aria-hidden="true">&gt;_</span>
+            <span data-i18n="termTrigger">open terminal</span>
         </button>
     </footer>
 
