@@ -1,0 +1,46 @@
+DirectoryIndex index.html index.php
+
+# ── HTTPS redirect ──────────────────────────────────────────
+RewriteEngine on
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/.+$
+RewriteCond %{HTTPS} !=on
+RewriteRule (.*) https://tamerm.com/$1 [R=301,L]
+
+# ── Clean URLs (hide .php extension) ────────────────────────
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.*)$ $1.php [L]
+
+# ── Security headers ─────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# ── Compression ──────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript application/json text/plain
+</IfModule>
+
+# ── CV download — force save-as with a clean filename ────────
+<IfModule mod_headers.c>
+    <FilesMatch "^cv\.pdf$">
+        Header set Content-Disposition "attachment; filename=\"TamerMurtazaoglu_CV.pdf\""
+        Header set Content-Type "application/pdf"
+    </FilesMatch>
+</IfModule>
+
+# ── Static asset caching ─────────────────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                  "access plus 1 year"
+    ExpiresByType application/javascript    "access plus 1 year"
+    ExpiresByType image/svg+xml             "access plus 1 year"
+    ExpiresByType application/pdf           "access plus 1 month"
+    ExpiresByType text/html                 "access plus 1 hour"
+</IfModule>
+
+# ── 404 ──────────────────────────────────────────────────────
+ErrorDocument 404 /index.html

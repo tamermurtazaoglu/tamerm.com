@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.user
+
+# CV — binary, kişisel; deployment'ta sunucuya ayrıca yükle
+cv.pdf
+
+# Misc
+*.log
+*.tmp
