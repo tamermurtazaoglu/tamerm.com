@@ -11,6 +11,132 @@ document.addEventListener('mouseup',   () => { mouse.down = false; });
 
 
 /* ============================================================
+   Language / i18n
+   ============================================================ */
+let currentLang = 'en';   // set properly by initI18n at bottom
+let _setRoles;             // typewriter hook — assigned by initTypewriter
+
+const T = {
+    en: {
+        status:  'Available for opportunities',
+        tagline: 'Crafting things for the web\u00A0& beyond.',
+        cvBtn:   'Download CV',
+        roles:   ['software developer', 'videographer', 'graphic designer', 'creative problem solver'],
+        ctx: {
+            night:    '🌙 Probably asleep',
+            early:    '🌅 Up early',
+            mornWork: '💻 Morning work session',
+            mornWknd: '☕ Weekend morning',
+            lunch:    '🍽️ Lunch time',
+            aftnWork: '💻 Deep in work',
+            aftnWknd: '🎬 Weekend vibes',
+            evening:  '🌆 Evening hours',
+            lateNight:'🌃 Night mode',
+            sameZone: 'Same timezone as you 👋',
+            ahead:  (h, t) => `Your time <strong>${t}</strong><br><span class="ctx-diff">+${h}h ahead</span>`,
+            behind: (h, t) => `Your time <strong>${t}</strong><br><span class="ctx-diff">${h}h behind</span>`,
+        },
+    },
+    tr: {
+        status:  'Fırsatlara açık',
+        tagline: 'Web ve ötesi için işler üretiyorum.',
+        cvBtn:   'CV İndir',
+        roles:   ['yazılım geliştirici', 'görüntü yönetmeni', 'grafik tasarımcı', 'yaratıcı problem çözücü'],
+        ctx: {
+            night:    '🌙 Muhtemelen uyuyor',
+            early:    '🌅 Günün erkeninde',
+            mornWork: '💻 Sabah çalışmasında',
+            mornWknd: '☕ Hafta sonu sabahında',
+            lunch:    '🍽️ Öğle saatlerinde',
+            aftnWork: '💻 Mesai devam ediyor',
+            aftnWknd: '🎬 Hafta sonu keyfinde',
+            evening:  '🌆 Akşam saatlerinde',
+            lateNight:'🌃 Gece modunda',
+            sameZone: 'Aynı saattesiniz 👋',
+            ahead:  (h, t) => `Senin saatin <strong>${t}</strong><br><span class="ctx-diff">+${h}h ileride</span>`,
+            behind: (h, t) => `Senin saatin <strong>${t}</strong><br><span class="ctx-diff">${h}h geride</span>`,
+        },
+    },
+};
+
+/* animate = false → instant update (on initial page load)
+   animate = true  → scramble transition (user clicks the toggle) */
+function setLang(lang, animate = true) {
+    currentLang = lang;
+    localStorage.setItem('tamerm-lang', lang);
+    document.documentElement.lang = lang;
+    const t = T[lang];
+
+    /* Toggle button labels — always instant */
+    const elCur = document.getElementById('lang-current');
+    const elOth = document.getElementById('lang-other');
+    if (elCur) elCur.textContent = lang.toUpperCase();
+    if (elOth) elOth.textContent = lang === 'en' ? 'TR' : 'EN';
+
+    if (!animate) {
+        /* Initial load: no animation, apply immediately */
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const v = t[el.dataset.i18n];
+            if (v !== undefined) el.textContent = v;
+        });
+        if (typeof _setRoles === 'function') _setRoles(t.roles);
+        return;
+    }
+
+    /* ── Button pulse ── */
+    const btn = document.getElementById('lang-toggle');
+    if (btn) {
+        btn.classList.remove('lang-pulse');
+        void btn.offsetWidth;           // force reflow to restart animation
+        btn.classList.add('lang-pulse');
+        btn.addEventListener('animationend', () => btn.classList.remove('lang-pulse'), { once: true });
+    }
+
+    /* ── Scramble transition: each element resolves in sequence ── */
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const rand  = () => CHARS[Math.floor(Math.random() * CHARS.length)];
+
+    document.querySelectorAll('[data-i18n]').forEach((el, idx) => {
+        const final = t[el.dataset.i18n];
+        if (final === undefined) return;
+
+        /* Each element starts 80 ms after the previous one */
+        setTimeout(() => {
+            const DUR       = 340;
+            const resolveAt = Array.from({ length: final.length }, (_, i) =>
+                (i / final.length) * DUR * 0.72 + Math.random() * 65
+            );
+            const t0 = performance.now();
+
+            (function tick(now) {
+                const elapsed = now - t0;
+                let out = '', done = true;
+
+                for (let i = 0; i < final.length; i++) {
+                    if (elapsed >= resolveAt[i]) {
+                        out += final[i];
+                    } else {
+                        done = false;
+                        /* 30% chance to show the correct char early — "almost there" feel */
+                        out += Math.random() < 0.30 ? final[i] : rand();
+                    }
+                }
+
+                el.textContent = out;
+                if (!done) requestAnimationFrame(tick);
+                else el.textContent = final;
+            }(performance.now()));
+        }, idx * 80);
+    });
+
+    /* Typewriter: swap roles shortly after scramble starts */
+    setTimeout(() => {
+        if (typeof _setRoles === 'function') _setRoles(t.roles);
+    }, 60);
+}
+
+
+/* ============================================================
    1. Gradient orb field
    ─────────────────────────────────────────────────────────────
    5 large luminous orbs drift slowly in Lissajous patterns.
@@ -391,23 +517,36 @@ document.addEventListener('mouseup',   () => { mouse.down = false; });
     const el = document.getElementById('role-text');
     if (!el) return;
 
-    const roles = ['software developer', 'videographer', 'graphic designer', 'creative problem solver'];
+    let roles   = [];      // filled by initI18n → setLang → _setRoles
     let ri = 0, ci = 0, del = false;
+    let timer = null;
+    let started = false;
 
     function tick() {
-        const cur = roles[ri];
+        if (!roles.length) return;
+        const cur = roles[ri % roles.length];
         if (!del) {
             ci++;
             el.textContent = cur.slice(0, ci);
-            if (ci === cur.length) { del = true; setTimeout(tick, 1950); return; }
+            if (ci === cur.length) { del = true; timer = setTimeout(tick, 1950); return; }
         } else {
             ci--;
             el.textContent = cur.slice(0, ci);
             if (ci === 0) { del = false; ri = (ri + 1) % roles.length; }
         }
-        setTimeout(tick, del ? 38 : 76);
+        timer = setTimeout(tick, del ? 38 : 76);
     }
-    setTimeout(tick, 1550);
+
+    /* exposed globally so setLang() can swap roles mid-flight */
+    _setRoles = (newRoles) => {
+        clearTimeout(timer);
+        roles = newRoles;
+        ri = 0; ci = 0; del = false;
+        el.textContent = '';
+        if (started) tick();   // restart only after initial delay has passed
+    };
+
+    setTimeout(() => { started = true; if (roles.length) tick(); }, 1550);
 }());
 
 
@@ -427,4 +566,25 @@ document.addEventListener('mouseup',   () => { mouse.down = false; });
         }, 5000 + Math.random() * 6000);
     }
     setTimeout(glitch, 3500);
+}());
+
+
+/* ============================================================
+   11. Language toggle (i18n)
+   ─────────────────────────────────────────────────────────────
+   Priority: localStorage → browser language → 'en'
+   Every setLang() call updates data-i18n elements, typewriter
+   roles, and context card messages.
+   ============================================================ */
+(function initI18n() {
+    const saved   = localStorage.getItem('tamerm-lang');
+    const browser = navigator.language.toLowerCase().startsWith('tr') ? 'tr' : 'en';
+    setLang(saved || browser, false);   // initial load: no animation
+
+    const btn = document.getElementById('lang-toggle');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        setLang(currentLang === 'en' ? 'tr' : 'en');
+    });
 }());

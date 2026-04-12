@@ -520,6 +520,55 @@ body::after {
 
 .sep { opacity: 0.35; }
 
+.lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.22rem 0.6rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    cursor: none;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.lang-toggle:hover,
+.lang-toggle:focus-visible {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.04);
+    outline: none;
+}
+
+#lang-current {
+    color: var(--text);
+}
+
+#lang-other {
+    opacity: 0.45;
+}
+
+.lang-sep {
+    opacity: 0.25;
+}
+
+/* Button pulses briefly when language is toggled */
+@keyframes lang-btn-pulse {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(99,102,241,0); }
+    35%  { transform: scale(0.91); box-shadow: 0 0 0 0   rgba(99,102,241,0); }
+    65%  { transform: scale(1.06); box-shadow: 0 0 0 5px rgba(99,102,241,0.22); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(99,102,241,0); }
+}
+
+.lang-toggle.lang-pulse {
+    animation: lang-btn-pulse 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 
 /* ============================================================
    Responsive
